@@ -1,15 +1,29 @@
-name: Build SafeExamBrowser
+name: Build and Release SafeExamBrowser
 
 on:
   push:
-    branches: [ "master", "main", "*" ]
+    branches: [ "master", "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "master", "main" ]
   workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publish a GitHub Release?'
+        required: false
+        type: boolean
+        default: true
+      tag_name:
+        description: 'Release Tag Name (e.g. v3.10.3-clipboard-fix)'
+        required: false
+        default: 'v3.10.3-clipboard-fix'
+
+permissions:
+  contents: write
 
 jobs:
   build:
-    name: Build Browser, DLL, MSI and EXE
+    name: Build Browser, DLL, MSI, EXE and Release
     runs-on: windows-2022
 
     steps:
@@ -79,6 +93,8 @@ jobs:
 
           Copy-Item "SetupBundle\bin\x86\Release\SetupBundle.exe" "artifacts\installers\SEB_SetupBundle.exe" -ErrorAction SilentlyContinue
 
+          Compress-Archive -Path "SafeExamBrowser.Runtime\bin\x64\Release\*" -DestinationPath "artifacts\SafeExamBrowser-Portable-x64.zip" -Force
+
           Get-ChildItem -Path "artifacts" -Recurse | Select-Object FullName, Length
 
       - name: Upload SafeExamBrowser.Browser.dll (x64)
@@ -104,3 +120,33 @@ jobs:
         with:
           name: SafeExamBrowser-Application-x64
           path: SafeExamBrowser.Runtime/bin/x64/Release/
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
+          name: SafeExamBrowser ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
+          draft: false
+          prerelease: false
+          body: |
+            ## SafeExamBrowser with Monaco Editor Clipboard Fix (#910)
+
+            This release provides a patched build of SafeExamBrowser addressing:
+            - **Issue #910 (Monaco Editor / Code Editor Copy Bug)**: Resolves the issue where only the first line of code was copied under isolated clipboard policy by decoupling interception from browser default behavior.
+            - **Cross-Window Clipboard Sync**: Supports both plain text and HTML DOM synchronization across browser windows.
+            - **Unsigned Build Execution Fix**: Resolves the bug where `ApplicationMonitor` mistakenly terminated custom/unsigned `SafeExamBrowser.Client.exe` in Release mode.
+
+            ### Downloads:
+            - **`SEB_SetupBundle.exe`**: Full installer bundle including .NET & Visual C++ prerequisites (recommended for new installations).
+            - **`SEB_x64_Setup.msi`**: Standalone 64-bit Windows Installer.
+            - **`SEB_x86_Setup.msi`**: Standalone 32-bit Windows Installer.
+            - **`SafeExamBrowser-Portable-x64.zip`**: Standalone / portable version. Extract and run `SafeExamBrowser.exe` directly without installation.
+            - **`SafeExamBrowser.Browser.dll`**: Replacement DLL for existing installations.
+          files: |
+            artifacts/installers/SEB_SetupBundle.exe
+            artifacts/installers/SEB_x64_Setup.msi
+            artifacts/installers/SEB_x86_Setup.msi
+            artifacts/SafeExamBrowser-Portable-x64.zip
+            artifacts/dll_x64/SafeExamBrowser.Browser.dll
+            artifacts/dll_x86/SafeExamBrowser.Browser.dll
