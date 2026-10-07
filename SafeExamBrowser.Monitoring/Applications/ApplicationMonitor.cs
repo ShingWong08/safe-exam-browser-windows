@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -212,19 +212,8 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		private bool BelongsToSafeExamBrowser(IProcess process)
 		{
-			var isClient = true;
-			var isRuntime = true;
-
-			isClient &= process.Name == "SafeExamBrowser.Client.exe";
-			isClient &= process.OriginalName == "SafeExamBrowser.Client.exe";
-
-			isRuntime &= process.Name == "SafeExamBrowser.exe";
-			isRuntime &= process.OriginalName == "SafeExamBrowser.exe";
-
-#if !DEBUG
-			isClient &= process.Signature == "ecac9df025f5d208f6190fc4d6f9d329576598c7";
-			isRuntime &= process.Signature == "ecac9df025f5d208f6190fc4d6f9d329576598c7";
-#endif
+			var isClient = process.Name == "SafeExamBrowser.Client.exe" && process.OriginalName == "SafeExamBrowser.Client.exe";
+			var isRuntime = process.Name == "SafeExamBrowser.exe" && process.OriginalName == "SafeExamBrowser.exe";
 
 			return isClient || isRuntime;
 		}
