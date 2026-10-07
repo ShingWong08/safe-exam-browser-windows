@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2026 ETH Zürich, IT Services
+# Copyright (c) 2026 ETH ZÃ¼rich, IT Services
 # 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -24,11 +24,6 @@ try
 		throw "Could not find directory '$Directory'!"
 	}
 
-	if (-not $signtool)
-	{
-		throw 'Could not find SignTool (signtool.exe)!'
-	}
-
 	$root = (Resolve-Path -LiteralPath $Directory).ProviderPath.TrimEnd('\')
 	$binaries = @(Get-ChildItem -LiteralPath $root -Recurse -File | Where-Object { $_.Extension -eq '.exe' -or $_.Extension -eq '.dll' })
 
@@ -37,12 +32,25 @@ try
 		throw "Could not find any binaries to sign in directory '$root'!"
 	}
 
+	$thumbprint = 'ecac9df025f5d208f6190fc4d6f9d329576598c7'
+	$cert = Get-Item "Cert:\CurrentUser\My\$thumbprint", "Cert:\LocalMachine\My\$thumbprint" -ErrorAction SilentlyContinue | Select-Object -First 1
+
+	if (-not $cert -or $env:SKIP_CODE_SIGNING -eq 'true')
+	{
+		Write-Warning "Code signing certificate '$thumbprint' was not found or SKIP_CODE_SIGNING is set. Skipping binary signing in '$root'."
+		exit 0
+	}
+
+	if (-not $signtool)
+	{
+		throw 'Could not find SignTool (signtool.exe)!'
+	}
+
 	$paths = @($binaries | ForEach-Object { $_.FullName.Substring("$root\".Length) })
 	$previous = [System.Environment]::CurrentDirectory
 
 	try
 	{
-		$thumbprint = 'ecac9df025f5d208f6190fc4d6f9d329576598c7'
 		$timestampServer = 'http://timestamp.digicert.com'
 
 		Push-Location -LiteralPath $root

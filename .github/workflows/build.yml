@@ -1,0 +1,92 @@
+name: Build SafeExamBrowser
+
+on:
+  push:
+    branches: [ "master", "main", "*" ]
+  pull_request:
+    branches: [ "master", "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Browser, DLL, MSI and EXE
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+
+      - name: Setup WiX Toolset
+        shell: powershell
+        run: |
+          if (-not (Test-Path "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin")) {
+            choco install wixtoolset --no-progress
+          }
+          $wixDir = "${env:ProgramFiles(x86)}\WiX Toolset v3.11\"
+          echo "WIX=$wixDir" >> $env:GITHUB_ENV
+          echo "$wixDir\bin" >> $env:GITHUB_PATH
+
+      - name: Create Temp Directory
+        shell: powershell
+        run: |
+          if (-not (Test-Path "C:\Temp")) {
+            New-Item -ItemType Directory -Path "C:\Temp" -Force
+          }
+
+      - name: Restore NuGet Packages
+        run: nuget restore SafeExamBrowser.sln
+
+      - name: Build Release x64
+        shell: powershell
+        run: |
+          $env:SKIP_CODE_SIGNING = "true"
+          msbuild /verbosity:minimal /property:langversion=latest /p:Configuration=Release /p:Platform=x64 /p:SignOutput=false SafeExamBrowser.sln
+
+      - name: Build Release x86 and SetupBundle
+        shell: powershell
+        run: |
+          $env:SKIP_CODE_SIGNING = "true"
+          msbuild /verbosity:minimal /property:langversion=latest /p:Configuration=Release /p:Platform=x86 /p:SignOutput=false SafeExamBrowser.sln
+
+      - name: Collect Artifacts
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path "artifacts\dll_x64" -Force
+          New-Item -ItemType Directory -Path "artifacts\dll_x86" -Force
+          New-Item -ItemType Directory -Path "artifacts\installers" -Force
+
+          Copy-Item "SafeExamBrowser.Browser\bin\x64\Release\SafeExamBrowser.Browser.dll" "artifacts\dll_x64\" -ErrorAction SilentlyContinue
+          Copy-Item "SafeExamBrowser.Browser\bin\x86\Release\SafeExamBrowser.Browser.dll" "artifacts\dll_x86\" -ErrorAction SilentlyContinue
+
+          Copy-Item "Setup\bin\x64\Release\Setup.msi" "artifacts\installers\SEB_x64_Setup.msi" -ErrorAction SilentlyContinue
+          Copy-Item "Setup\bin\x86\Release\Setup.msi" "artifacts\installers\SEB_x86_Setup.msi" -ErrorAction SilentlyContinue
+
+          Copy-Item "SetupBundle\bin\x86\Release\SetupBundle.exe" "artifacts\installers\SEB_SetupBundle.exe" -ErrorAction SilentlyContinue
+
+          Get-ChildItem -Path "artifacts" -Recurse | Select-Object FullName, Length
+
+      - name: Upload SafeExamBrowser.Browser.dll (x64)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser.Browser-dll-x64
+          path: artifacts/dll_x64/SafeExamBrowser.Browser.dll
+
+      - name: Upload SafeExamBrowser.Browser.dll (x86)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser.Browser-dll-x86
+          path: artifacts/dll_x86/SafeExamBrowser.Browser.dll
+
+      - name: Upload Installers (MSI & EXE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEB-Installers
+          path: artifacts/installers/

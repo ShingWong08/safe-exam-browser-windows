@@ -131,13 +131,13 @@ git -C $(SolutionDir) checkout -- Setup/Components/Service.wxs</PostBuildEvent>
 	</Target>
 	-->
   <PropertyGroup>
-    <SignOutput>true</SignOutput>
+    <SignOutput Condition=" '$(SignOutput)' == '' ">true</SignOutput>
   </PropertyGroup>
-  <Target Name="SignCabs">
-    <Exec Command="signtool sign /sha1 ecac9df025f5d208f6190fc4d6f9d329576598c7 /sm /tr http://timestamp.digicert.com /td sha256 /fd sha256 &quot;%(SignCabs.FullPath)&quot;" />
+  <Target Name="SignCabs" Condition=" '$(SignOutput)' == 'true' ">
+    <Exec Command="signtool sign /sha1 ecac9df025f5d208f6190fc4d6f9d329576598c7 /sm /tr http://timestamp.digicert.com /td sha256 /fd sha256 &quot;%(SignCabs.FullPath)&quot;" ContinueOnError="true" />
   </Target>
-  <Target Name="SignMsi">
-    <Exec Command="signtool sign /sha1 ecac9df025f5d208f6190fc4d6f9d329576598c7 /sm /tr http://timestamp.digicert.com /td sha256 /fd sha256 /d &quot;Safe Exam Browser&quot; &quot;%(SignMsi.FullPath)&quot;" />
+  <Target Name="SignMsi" Condition=" '$(SignOutput)' == 'true' ">
+    <Exec Command="signtool sign /sha1 ecac9df025f5d208f6190fc4d6f9d329576598c7 /sm /tr http://timestamp.digicert.com /td sha256 /fd sha256 /d &quot;Safe Exam Browser&quot; &quot;%(SignMsi.FullPath)&quot;" ContinueOnError="true" />
   </Target>
   <PropertyGroup>
     <PreBuildEvent>set SIGN=powershell -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "$(ProjectDir)Sign.ps1" -Directory
