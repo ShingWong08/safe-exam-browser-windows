@@ -27,12 +27,20 @@ jobs:
       - name: Setup WiX Toolset
         shell: powershell
         run: |
-          if (-not (Test-Path "${env:ProgramFiles(x86)}\WiX Toolset v3.11\bin")) {
+          $heatItem = Get-ChildItem -Path "${env:ProgramFiles(x86)}" -Filter "heat.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $heatItem) {
             choco install wixtoolset --no-progress
+            $heatItem = Get-ChildItem -Path "${env:ProgramFiles(x86)}" -Filter "heat.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
           }
-          $wixDir = "${env:ProgramFiles(x86)}\WiX Toolset v3.11\"
-          echo "WIX=$wixDir" >> $env:GITHUB_ENV
-          echo "$wixDir\bin" >> $env:GITHUB_PATH
+          if ($heatItem) {
+            $wixBin = $heatItem.Directory.FullName
+            $wixRoot = $heatItem.Directory.Parent.FullName.TrimEnd('\') + '\'
+            "WIX=$wixRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            "$wixBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Host "Successfully located WiX at $wixRoot and bin at $wixBin"
+          } else {
+            throw "WiX Toolset (heat.exe) could not be found!"
+          }
 
       - name: Create Temp Directory
         shell: powershell
