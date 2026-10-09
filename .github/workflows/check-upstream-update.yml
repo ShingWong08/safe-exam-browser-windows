@@ -1,0 +1,50 @@
+name: Check Upstream SEB Updates
+
+on:
+  schedule:
+    - cron: '0 3 * * *' # Automatically checks every day at 03:00 UTC
+  workflow_dispatch:     # Also triggerable manually anytime with 1 click in Actions tab
+
+permissions:
+  contents: write
+
+jobs:
+  check-and-trigger:
+    name: Check ETH Zurich SEB Upstream Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Query upstream latest release
+        id: upstream
+        shell: bash
+        run: |
+          UPSTREAM_TAG=$(curl -s https://api.github.com/repos/SafeExamBrowser/seb-win-refactoring/releases/latest | jq -r .tag_name)
+          if [ -z "$UPSTREAM_TAG" ] || [ "$UPSTREAM_TAG" = "null" ]; then
+            echo "Could not fetch upstream release tag."
+            exit 0
+          fi
+          echo "Latest upstream release tag: $UPSTREAM_TAG"
+          
+          OUR_TAG="${UPSTREAM_TAG}-clipboard-fix"
+          if git rev-parse "$OUR_TAG" >/dev/null 2>&1; then
+            echo "Release $OUR_TAG already exists in our repository. No update needed."
+            echo "new_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found new upstream release: $UPSTREAM_TAG! Preparing auto-build..."
+            echo "new_release=true" >> $GITHUB_OUTPUT
+            echo "tag_name=$OUR_TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag to trigger build
+        if: steps.upstream.outputs.new_release == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "${{ steps.upstream.outputs.tag_name }}"
+          git push origin "${{ steps.upstream.outputs.tag_name }}"
+          echo "Pushed tag ${{ steps.upstream.outputs.tag_name }} - this triggers the dual build workflow!"

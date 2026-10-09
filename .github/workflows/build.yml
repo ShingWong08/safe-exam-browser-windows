@@ -1,15 +1,13 @@
-name: Build and Release SafeExamBrowser
+name: Build SafeExamBrowser (Public Release & Private Audit)
 
 on:
   push:
     branches: [ "master", "main" ]
     tags: [ "v*" ]
-  pull_request:
-    branches: [ "master", "main" ]
   workflow_dispatch:
     inputs:
       create_release:
-        description: 'Publish a GitHub Release?'
+        description: 'Publish a Public GitHub Release?'
         required: false
         type: boolean
         default: true
@@ -22,10 +20,9 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build Browser, DLL, MSI, EXE and Release
+  build-public:
+    name: Public Release (Fixed Clipboard)
     runs-on: windows-2022
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -119,31 +116,19 @@ jobs:
 
           Get-ChildItem -Path "artifacts" -Recurse | Select-Object FullName, Length
 
-      - name: Upload SafeExamBrowser.Browser.dll (x64)
+      - name: Upload Public Installers (MSI & EXE)
         uses: actions/upload-artifact@v4
         with:
-          name: SafeExamBrowser.Browser-dll-x64
-          path: artifacts/dll_x64/SafeExamBrowser.Browser.dll
-
-      - name: Upload SafeExamBrowser.Browser.dll (x86)
-        uses: actions/upload-artifact@v4
-        with:
-          name: SafeExamBrowser.Browser-dll-x86
-          path: artifacts/dll_x86/SafeExamBrowser.Browser.dll
-
-      - name: Upload Installers (MSI & EXE)
-        uses: actions/upload-artifact@v4
-        with:
-          name: SEB-Installers
+          name: Public-SEB-Installers
           path: artifacts/installers/
 
-      - name: Upload Full Application (x64 Portable)
+      - name: Upload Public Portable Zip
         uses: actions/upload-artifact@v4
         with:
-          name: SafeExamBrowser-Application-x64
-          path: SafeExamBrowser.Runtime/bin/x64/Release/
+          name: Public-SafeExamBrowser-Portable-x64
+          path: artifacts/SafeExamBrowser-Portable-x64.zip
 
-      - name: Create GitHub Release
+      - name: Create Public GitHub Release
         if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
         uses: softprops/action-gh-release@v2
         with:
@@ -172,3 +157,130 @@ jobs:
             artifacts/SafeExamBrowser-Portable-x64.zip
             artifacts/dll_x64/SafeExamBrowser.Browser.dll
             artifacts/dll_x86/SafeExamBrowser.Browser.dll
+
+  build-private-audit:
+    name: Private Audit Build (VM & Remote Session Bypassed)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: nuget/setup-nuget@v2
+
+      - name: Setup WiX Toolset
+        shell: powershell
+        run: |
+          $heatItem = Get-ChildItem -Path "${env:ProgramFiles(x86)}" -Filter "heat.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $heatItem) {
+            choco install wixtoolset --no-progress
+            $heatItem = Get-ChildItem -Path "${env:ProgramFiles(x86)}" -Filter "heat.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+          }
+          if ($heatItem) {
+            $wixBin = $heatItem.Directory.FullName
+            $wixRoot = $heatItem.Directory.Parent.FullName.TrimEnd('\') + '\'
+            "WIX=$wixRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+            "$wixBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+            Write-Host "Successfully located WiX at $wixRoot and bin at $wixBin"
+          } else {
+            throw "WiX Toolset (heat.exe) could not be found!"
+          }
+
+      - name: Create Temp Directory
+        shell: powershell
+        run: |
+          if (-not (Test-Path "C:\Temp")) {
+            New-Item -ItemType Directory -Path "C:\Temp" -Force
+          }
+
+      - name: Restore NuGet Packages
+        run: nuget restore SafeExamBrowser.sln
+
+      - name: Patch Assembly Versions
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $versionStr = "3.10.3"
+          if ($tag -match 'v?(\d+\.\d+\.\d+)') {
+            $versionStr = $matches[1]
+          }
+          $assemblyVersion = "$versionStr.0"
+          $infoVersion = "$versionStr"
+          Write-Host "Patching AssemblyInfo.cs files with AssemblyVersion: $assemblyVersion and InformationalVersion: $infoVersion"
+
+          Get-ChildItem -Recurse -Filter "AssemblyInfo.cs" | ForEach-Object {
+            $content = Get-Content $_.FullName -Raw
+            $newContent = $content -replace '\[assembly:\s*AssemblyVersion\(".*?"\)\]', "[assembly: AssemblyVersion(`"$assemblyVersion`")]"
+            $newContent = $newContent -replace '\[assembly:\s*AssemblyFileVersion\(".*?"\)\]', "[assembly: AssemblyFileVersion(`"$assemblyVersion`")]"
+            $newContent = $newContent -replace '\[assembly:\s*AssemblyInformationalVersion\(".*?"\)\]', "[assembly: AssemblyInformationalVersion(`"$infoVersion`")]"
+            if ($content -ne $newContent) {
+              Set-Content -Path $_.FullName -Value $newContent -Encoding UTF8
+            }
+          }
+
+      - name: Apply Audit Bypass Patch (VM & Remote Session)
+        shell: powershell
+        run: |
+          Write-Host "Applying audit bypass patch..."
+          $vmFile = "SafeExamBrowser.Monitoring\VirtualMachineDetector.cs"
+          $vmContent = Get-Content $vmFile -Raw
+          $vmPatched = $vmContent -replace '(?s)public bool IsVirtualMachine\(\).*?return isVm;\s*\}', @"
+          public bool IsVirtualMachine()
+          {
+              logger.Info(`$"[AUDIT MODE] Computer '{systemInfo.Name}' virtual machine check bypassed for testing/auditing purposes.");
+              return false;
+          }
+          "@
+          Set-Content $vmFile -Value $vmPatched -Encoding UTF8
+
+          $rsFile = "SafeExamBrowser.Monitoring\RemoteSessionDetector.cs"
+          $rsContent = Get-Content $rsFile -Raw
+          $rsPatched = $rsContent -replace '(?s)public bool IsRemoteSession\(\).*?return isRemoteSession;\s*\}', @"
+          public bool IsRemoteSession()
+          {
+              logger.Info(`$"[AUDIT MODE] Remote session check bypassed for testing/auditing purposes.");
+              return false;
+          }
+          "@
+          Set-Content $rsFile -Value $rsPatched -Encoding UTF8
+          Write-Host "Audit bypass patch applied successfully."
+
+      - name: Build Release x64
+        shell: powershell
+        run: |
+          $env:SKIP_CODE_SIGNING = "true"
+          msbuild /verbosity:minimal /property:langversion=latest /p:Configuration=Release /p:Platform=x64 /p:SignOutput=false SafeExamBrowser.sln
+
+      - name: Build Release x86 and SetupBundle
+        shell: powershell
+        run: |
+          $env:SKIP_CODE_SIGNING = "true"
+          msbuild /verbosity:minimal /property:langversion=latest /p:Configuration=Release /p:Platform=x86 /p:SignOutput=false SafeExamBrowser.sln
+
+      - name: Collect Artifacts
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path "artifacts\installers" -Force
+
+          Copy-Item "Setup\bin\x64\Release\Setup.msi" "artifacts\installers\SEB_x64_Setup.msi" -ErrorAction SilentlyContinue
+          Copy-Item "Setup\bin\x86\Release\Setup.msi" "artifacts\installers\SEB_x86_Setup.msi" -ErrorAction SilentlyContinue
+          Copy-Item "SetupBundle\bin\x86\Release\SetupBundle.exe" "artifacts\installers\SEB_SetupBundle.exe" -ErrorAction SilentlyContinue
+
+          Compress-Archive -Path "SafeExamBrowser.Runtime\bin\x64\Release\*" -DestinationPath "artifacts\SafeExamBrowser-PrivateAudit-Portable-x64.zip" -Force
+
+      - name: Upload Private Audit Portable (Zip)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Private-Audit-VM-Bypass-Portable-x64
+          path: artifacts/SafeExamBrowser-PrivateAudit-Portable-x64.zip
+
+      - name: Upload Private Audit Installers (MSI & EXE)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Private-Audit-VM-Bypass-Installers
+          path: artifacts/installers/
