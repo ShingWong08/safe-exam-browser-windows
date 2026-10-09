@@ -66,6 +66,28 @@ jobs:
       - name: Restore NuGet Packages
         run: nuget restore SafeExamBrowser.sln
 
+      - name: Patch Assembly Versions
+        shell: powershell
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $versionStr = "3.10.3"
+          if ($tag -match 'v?(\d+\.\d+\.\d+)') {
+            $versionStr = $matches[1]
+          }
+          $assemblyVersion = "$versionStr.0"
+          $infoVersion = "$versionStr"
+          Write-Host "Patching AssemblyInfo.cs files with AssemblyVersion: $assemblyVersion and InformationalVersion: $infoVersion"
+
+          Get-ChildItem -Recurse -Filter "AssemblyInfo.cs" | ForEach-Object {
+            $content = Get-Content $_.FullName -Raw
+            $newContent = $content -replace '\[assembly:\s*AssemblyVersion\(".*?"\)\]', "[assembly: AssemblyVersion(`"$assemblyVersion`")]"
+            $newContent = $newContent -replace '\[assembly:\s*AssemblyFileVersion\(".*?"\)\]', "[assembly: AssemblyFileVersion(`"$assemblyVersion`")]"
+            $newContent = $newContent -replace '\[assembly:\s*AssemblyInformationalVersion\(".*?"\)\]', "[assembly: AssemblyInformationalVersion(`"$infoVersion`")]"
+            if ($content -ne $newContent) {
+              Set-Content -Path $_.FullName -Value $newContent -Encoding UTF8
+            }
+          }
+
       - name: Build Release x64
         shell: powershell
         run: |
