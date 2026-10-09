@@ -2,7 +2,7 @@ name: Build and Release SafeExamBrowser
 
 on:
   push:
-    branches: [ "master", "main" ]
+    branches: [ "master", "main", "audit/*" ]
     tags: [ "v*" ]
   pull_request:
     branches: [ "master", "main" ]
@@ -128,14 +128,22 @@ jobs:
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
           name: SafeExamBrowser ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
           draft: false
-          prerelease: false
+          prerelease: true
           body: |
-            ## SafeExamBrowser with Monaco Editor Clipboard Fix (#910)
+            ## SafeExamBrowser (Audit Build - VM & Remote Session Detection Bypassed)
 
-            This release provides a patched build of SafeExamBrowser addressing:
-            - **Issue #910 (Monaco Editor / Code Editor Copy Bug)**: Resolves the issue where only the first line of code was copied under isolated clipboard policy by decoupling interception from browser default behavior.
-            - **Cross-Window Clipboard Sync**: Supports both plain text and HTML DOM synchronization across browser windows.
-            - **Unsigned Build Execution Fix**: Resolves the bug where `ApplicationMonitor` mistakenly terminated custom/unsigned `SafeExamBrowser.Client.exe` in Release mode.
+            > **FOR SECURITY AUDITING & LMS TESTING ONLY**
+            > This build is designed for professors and security researchers to audit whether their LMS (Moodle, Canvas, Inspera) correctly validates the **Browser Exam Key (BEK)** and blocks unauthorized or tampered clients inside virtual machines.
+
+            ### Modifications in this Build:
+            - **Virtual Machine Detection Bypassed**: `VirtualMachineDetector.IsVirtualMachine()` returns `false`.
+            - **Remote Session Detection Bypassed**: `RemoteSessionDetector.IsRemoteSession()` returns `false`.
+            - **Issue #910 Fix**: Monaco Editor clipboard copy/paste fix is included.
+
+            ### Testing Procedure:
+            1. Run this build inside a Virtual Machine (VMware, VirtualBox, Hyper-V, etc.).
+            2. Launch your institutional `.seb` exam configuration.
+            3. Verify whether your LMS rejects the connection with a BEK mismatch error.
 
             ### Downloads:
             - **`SEB_SetupBundle.exe`**: Full installer bundle including .NET & Visual C++ prerequisites (recommended for new installations).

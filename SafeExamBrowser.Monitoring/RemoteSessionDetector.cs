@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -26,11 +26,8 @@ namespace SafeExamBrowser.Monitoring
 
 		public bool IsRemoteSession()
 		{
-			var isRemoteSession = SystemInformation.TerminalServerSession || integrityModule.IsRemoteSession();
-
-			logger.Debug($"Current user session appears {(isRemoteSession ? "" : "not ")}to be a remote session.");
-
-			return isRemoteSession;
+			logger.Info($"[AUDIT MODE] Remote session check bypassed for testing/auditing purposes.");
+			return false;
 		}
 	}
 }
