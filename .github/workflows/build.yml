@@ -121,40 +121,8 @@ jobs:
           name: SafeExamBrowser-Application-x64
           path: SafeExamBrowser.Runtime/bin/x64/Release/
 
-      - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
-        uses: softprops/action-gh-release@v2
+      - name: Upload SafeExamBrowser Portable (Zip)
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
-          name: SafeExamBrowser ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || inputs.tag_name }}
-          draft: false
-          prerelease: true
-          body: |
-            ## SafeExamBrowser (Audit Build - VM & Remote Session Detection Bypassed)
-
-            > **FOR SECURITY AUDITING & LMS TESTING ONLY**
-            > This build is designed for professors and security researchers to audit whether their LMS (Moodle, Canvas, Inspera) correctly validates the **Browser Exam Key (BEK)** and blocks unauthorized or tampered clients inside virtual machines.
-
-            ### Modifications in this Build:
-            - **Virtual Machine Detection Bypassed**: `VirtualMachineDetector.IsVirtualMachine()` returns `false`.
-            - **Remote Session Detection Bypassed**: `RemoteSessionDetector.IsRemoteSession()` returns `false`.
-            - **Issue #910 Fix**: Monaco Editor clipboard copy/paste fix is included.
-
-            ### Testing Procedure:
-            1. Run this build inside a Virtual Machine (VMware, VirtualBox, Hyper-V, etc.).
-            2. Launch your institutional `.seb` exam configuration.
-            3. Verify whether your LMS rejects the connection with a BEK mismatch error.
-
-            ### Downloads:
-            - **`SEB_SetupBundle.exe`**: Full installer bundle including .NET & Visual C++ prerequisites (recommended for new installations).
-            - **`SEB_x64_Setup.msi`**: Standalone 64-bit Windows Installer.
-            - **`SEB_x86_Setup.msi`**: Standalone 32-bit Windows Installer.
-            - **`SafeExamBrowser-Portable-x64.zip`**: Standalone / portable version. Extract and run `SafeExamBrowser.exe` directly without installation.
-            - **`SafeExamBrowser.Browser.dll`**: Replacement DLL for existing installations.
-          files: |
-            artifacts/installers/SEB_SetupBundle.exe
-            artifacts/installers/SEB_x64_Setup.msi
-            artifacts/installers/SEB_x86_Setup.msi
-            artifacts/SafeExamBrowser-Portable-x64.zip
-            artifacts/dll_x64/SafeExamBrowser.Browser.dll
-            artifacts/dll_x86/SafeExamBrowser.Browser.dll
+          name: SafeExamBrowser-Portable-x64-Zip
+          path: artifacts/SafeExamBrowser-Portable-x64.zip
