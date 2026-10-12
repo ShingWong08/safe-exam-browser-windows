@@ -36,15 +36,21 @@ jobs:
           else
             echo "Found new upstream release: $UPSTREAM_TAG! Preparing auto-build..."
             echo "new_release=true" >> $GITHUB_OUTPUT
+            echo "upstream_tag=$UPSTREAM_TAG" >> $GITHUB_OUTPUT
             echo "tag_name=$OUR_TAG" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create and push tag to trigger build
+      - name: Merge upstream and push tag to trigger build
         if: steps.upstream.outputs.new_release == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git remote add upstream https://github.com/SafeExamBrowser/seb-win-refactoring.git 2>/dev/null || true
+          git fetch upstream tag "${{ steps.upstream.outputs.upstream_tag }}" --no-tags
+          git checkout master
+          git merge FETCH_HEAD -m "Merge official upstream release ${{ steps.upstream.outputs.upstream_tag }}" || true
+          git push origin master || true
           git tag "${{ steps.upstream.outputs.tag_name }}"
           git push origin "${{ steps.upstream.outputs.tag_name }}"
-          echo "Pushed tag ${{ steps.upstream.outputs.tag_name }} - this triggers the dual build workflow!"
+          echo "Pushed tag ${{ steps.upstream.outputs.tag_name }} with merged upstream code!"
