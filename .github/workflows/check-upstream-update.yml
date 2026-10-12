@@ -51,6 +51,14 @@ jobs:
           git checkout master
           git merge FETCH_HEAD -m "Merge official upstream release ${{ steps.upstream.outputs.upstream_tag }}" || true
           git push origin master || true
+          
+          # Keep disable-vm-detection in sync
+          if git checkout disable-vm-detection 2>/dev/null; then
+            git merge master -m "Sync master into disable-vm-detection" || true
+            git push origin disable-vm-detection || true
+            git checkout master
+          fi
+
           git tag "${{ steps.upstream.outputs.tag_name }}"
           git push origin "${{ steps.upstream.outputs.tag_name }}"
           echo "Pushed tag ${{ steps.upstream.outputs.tag_name }} with merged upstream code!"

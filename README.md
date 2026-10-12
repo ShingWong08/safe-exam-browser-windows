@@ -23,11 +23,11 @@ A specialized distribution of **Safe Exam Browser (SEB) for Windows** based on v
 * **The Problem**: Upstream SEB builds contained hardcoded digital signature checks in [`ApplicationMonitor.cs`](SafeExamBrowser.Monitoring/Applications/ApplicationMonitor.cs), terminating custom or unsigned `SafeExamBrowser.Client.exe` binaries immediately upon launch.
 * **Our Solution**: Relaxed internal signature restrictions for SEB's own client process while preserving full application monitoring, blacklisting, and process guards against unauthorized third-party software.
 
-### 3. Automated Dual-Track CI/CD Pipelines
+### 3. Automated CI/CD Release Packaging
 * Automated cloud builds via GitHub Actions with WiX v3.14 toolset.
 * **Public Release Pipeline**: Automatically compiles and packages installer bundles (`.exe`), standalone MSIs (`.msi`), and portable zip packages (`.zip`).
-* **Automated Assembly Versioning**: Dynamically stamps `3.10.3.0` across all 49 project assemblies to prevent `1.0.0.0` metadata drift.
-* **Automated Upstream Tracker**: Includes a scheduled workflow that monitors official ETH Zürich releases and automatically triggers dual builds.
+* **Automated Assembly Versioning**: Dynamically stamps version metadata across all 49 project assemblies to prevent `1.0.0.0` metadata drift.
+* **Automated Upstream Tracker**: Includes a scheduled workflow that monitors official ETH Zürich releases and automatically synchronizes updates.
 
 ---
 
@@ -55,6 +55,13 @@ If using the **MSI packages** or the **Portable ZIP**, ensure the following Micr
 * [Microsoft Visual C++ 2015–2022 Redistributable (x64)](https://aka.ms/vs/17/release/vc_redist.x64.exe)
 
 *(The `SEB_SetupBundle.exe` installer includes and automatically installs these prerequisites).*
+
+---
+
+## 🌿 Repository Branches
+
+* **`master`** (Default): Main production branch containing the Monaco Editor clipboard fixes and release packaging pipeline.
+* **`disable-vm-detection`**: Specialized staging branch maintained for laboratory automation and virtualized test environments.
 
 ---
 
