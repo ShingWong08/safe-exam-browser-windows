@@ -61,7 +61,6 @@ If using the **MSI packages** or the **Portable ZIP**, ensure the following Micr
 ## 🌿 Repository Branches
 
 * **`master`** (Default): Main production branch containing the Monaco Editor clipboard fixes and release packaging pipeline.
-* **`disable-vm-detection`**: Specialized staging branch maintained for laboratory automation and virtualized test environments.
 
 ---
 
