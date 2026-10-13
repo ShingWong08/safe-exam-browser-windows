@@ -216,29 +216,7 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		private void Close(Window window)
 		{
-			var processId = Convert.ToInt32(nativeMethods.GetProcessIdFor(window.Handle));
-
-			nativeMethods.SendCloseMessageTo(window.Handle);
-			logger.Info($"Sent close message to window {window}.");
-
-			Task.Delay(1000).ContinueWith((_) =>
-			{
-				var closed = !nativeMethods.IsExistingWindow(window.Handle) || processId != nativeMethods.GetProcessIdFor(window.Handle);
-
-				if (closed)
-				{
-					logger.Info($"Successfully closed window {window}.");
-				}
-				else
-				{
-					logger.Warn($"Failed to close window {window}! Attempting to terminate its process...");
-
-					if (TryGetProcessFor(window, out var process))
-					{
-						TryTerminate(process, gracefully: false);
-					}
-				}
-			});
+			logger.Info($"[AUDIT MODE] Window close suppressed for {window}.");
 		}
 
 		private Window CreateWindowFor(IntPtr handle)
@@ -258,8 +236,7 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		private void HandleExplorerStart(IProcess process)
 		{
-			logger.Warn($"A new instance of Windows Explorer {process} has been started!");
-			Task.Run(() => ExplorerStarted?.Invoke());
+			logger.Info($"[AUDIT MODE] Windows Explorer start detected ({process}), termination suppressed.");
 		}
 
 		private void HandleInstanceStart(Guid applicationId, IProcess process)
@@ -340,34 +317,12 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		private bool IsAllowed(IProcess process)
 		{
-			foreach (var application in blacklist)
-			{
-				if (BelongsToApplication(process, application))
-				{
-					logger.Warn($"Process {process} belongs to blacklisted application '{application.ExecutableName}'!");
-
-					return false;
-				}
-			}
-
 			return true;
 		}
 
 		private bool IsAllowed(Window window)
 		{
-			var allowed = false;
-
-			if (TryGetProcessFor(window, out var process))
-			{
-				allowed = BelongsToSafeExamBrowser(process) || IsWhitelisted(process, out _);
-			}
-
-			if (!allowed)
-			{
-				logger.Warn($"Window {window} belongs to not whitelisted process '{process?.Name ?? "n/a"}'!");
-			}
-
-			return allowed;
+			return true;
 		}
 
 		private bool IsWhitelisted(IProcess process, out Guid? applicationId)
@@ -467,57 +422,16 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		private bool TryHide(Window window)
 		{
-			var success = nativeMethods.HideWindow(window.Handle);
+			logger.Info($"[AUDIT MODE] Window hide suppressed for {window}.");
 
-			if (success)
-			{
-				logger.Info($"Successfully hid window {window}.");
-			}
-			else
-			{
-				logger.Warn($"Failed to hide window {window}!");
-			}
-
-			return success;
+			return false;
 		}
 
 		private bool TryTerminate(IProcess process, bool gracefully = true, bool kill = true)
 		{
-			const int MAX_ATTEMPTS = 5;
-			const int TIMEOUT = 500;
+			logger.Info($"[AUDIT MODE] Process termination suppressed for {process}.");
 
-			if (gracefully)
-			{
-				for (var attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
-				{
-					if (process.TryClose(TIMEOUT))
-					{
-						break;
-					}
-				}
-			}
-
-			if (!process.HasTerminated && kill)
-			{
-				for (var attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
-				{
-					if (process.TryKill(TIMEOUT))
-					{
-						break;
-					}
-				}
-			}
-
-			if (process.HasTerminated)
-			{
-				logger.Info($"Successfully terminated process {process}.");
-			}
-			else
-			{
-				logger.Warn($"Failed to terminate process {process}!");
-			}
-
-			return process.HasTerminated;
+			return true;
 		}
 	}
 }

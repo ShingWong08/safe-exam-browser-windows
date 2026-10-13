@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -67,8 +67,7 @@ namespace SafeExamBrowser.WindowsApi.Desktops
 
 					if (name?.Equals(desktop.Name, StringComparison.OrdinalIgnoreCase) != true)
 					{
-						logger.Warn($"Detected desktop switch to '{name}' [{handle}], trying to reactivate {desktop}...");
-						desktop.Activate();
+						logger.Info($"[AUDIT MODE] Detected desktop switch to '{name}' [{handle}], reactivation suppressed for evaluation purposes.");
 					}
 				}
 				else

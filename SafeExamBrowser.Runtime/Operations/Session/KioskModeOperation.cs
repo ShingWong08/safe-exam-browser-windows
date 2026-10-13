@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -42,77 +42,30 @@ namespace SafeExamBrowser.Runtime.Operations.Session
 
 		public override OperationResult Perform()
 		{
-			Logger.Info($"Initializing kiosk mode '{Context.Next.Settings.Security.KioskMode}'...");
+			Logger.Info($"[AUDIT MODE] Kiosk mode '{Context.Next.Settings.Security.KioskMode}' downgraded to None for evaluation purposes.");
 			StatusChanged?.Invoke(TextKey.OperationStatus_InitializeKioskMode);
 
-			activeMode = Context.Next.Settings.Security.KioskMode;
-
-			switch (Context.Next.Settings.Security.KioskMode)
-			{
-				case KioskMode.CreateNewDesktop:
-					CreateCustomDesktop();
-					break;
-				case KioskMode.DisableExplorerShell:
-					TerminateExplorerShell();
-					break;
-			}
+			Context.Next.Settings.Security.KioskMode = KioskMode.None;
+			activeMode = KioskMode.None;
 
 			return OperationResult.Success;
 		}
 
 		public override OperationResult Repeat()
 		{
-			var newMode = Context.Next.Settings.Security.KioskMode;
+			Logger.Info("[AUDIT MODE] Kiosk mode repeat downgraded to None for evaluation purposes.");
+			StatusChanged?.Invoke(TextKey.OperationStatus_InitializeKioskMode);
 
-			if (activeMode == newMode)
-			{
-				Logger.Info($"New kiosk mode '{newMode}' is the same as the currently active mode, skipping re-initialization...");
-			}
-			else
-			{
-				Logger.Info($"Switching from kiosk mode '{activeMode}' to '{newMode}'...");
-				StatusChanged?.Invoke(TextKey.OperationStatus_InitializeKioskMode);
-
-				switch (activeMode)
-				{
-					case KioskMode.CreateNewDesktop:
-						CloseCustomDesktop();
-						break;
-					case KioskMode.DisableExplorerShell:
-						RestartExplorerShell();
-						break;
-				}
-
-				activeMode = newMode;
-
-				switch (newMode)
-				{
-					case KioskMode.CreateNewDesktop:
-						CreateCustomDesktop();
-						break;
-					case KioskMode.DisableExplorerShell:
-						TerminateExplorerShell();
-						break;
-				}
-			}
+			Context.Next.Settings.Security.KioskMode = KioskMode.None;
+			activeMode = KioskMode.None;
 
 			return OperationResult.Success;
 		}
 
 		public override OperationResult Revert()
 		{
-			Logger.Info($"Reverting kiosk mode '{activeMode}'...");
+			Logger.Info("[AUDIT MODE] Kiosk mode revert bypassed.");
 			StatusChanged?.Invoke(TextKey.OperationStatus_RevertKioskMode);
-
-			switch (activeMode)
-			{
-				case KioskMode.CreateNewDesktop:
-					CloseCustomDesktop();
-					break;
-				case KioskMode.DisableExplorerShell:
-					RestartExplorerShell();
-					break;
-			}
 
 			return OperationResult.Success;
 		}

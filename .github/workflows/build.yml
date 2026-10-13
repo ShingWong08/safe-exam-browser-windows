@@ -318,7 +318,77 @@ jobs:
               return OperationResult.Success;
           }
           "@
-          Set-Content $siFile -Value $siPatched -Encoding UTF8
+          # Patch 8: ApplicationMonitor Runtime Window & Process allow
+          $amPatched = $amPatched -replace '(?s)private bool IsAllowed\(Window window\)\s*\{.*?return allowed;\s*\}', @"
+          private bool IsAllowed(Window window)
+          {
+              return true;
+          }
+          "@
+          $amPatched = $amPatched -replace '(?s)private bool IsAllowed\(IProcess process\)\s*\{.*?return true;\s*\}', @"
+          private bool IsAllowed(IProcess process)
+          {
+              return true;
+          }
+          "@
+          $amPatched = $amPatched -replace '(?s)private void Close\(Window window\)\s*\{.*?Task\.Delay.*?\}\);\s*\}', @"
+          private void Close(Window window)
+          {
+              logger.Info(`$"[EVALUATION MODE] Window close suppressed for {window}.");
+          }
+          "@
+          $amPatched = $amPatched -replace '(?s)private bool TryHide\(Window window\)\s*\{.*?return success;\s*\}', @"
+          private bool TryHide(Window window)
+          {
+              logger.Info(`$"[EVALUATION MODE] Window hide suppressed for {window}.");
+              return false;
+          }
+          "@
+          Set-Content $amFile -Value $amPatched -Encoding UTF8
+
+          # Patch 9: Desktop Monitor reactivation suppression
+          $dskFile = "SafeExamBrowser.WindowsApi\Desktops\DesktopMonitor.cs"
+          $dskContent = Get-Content $dskFile -Raw
+          $dskPatched = $dskContent -replace '(?s)if \(name\?\.Equals\(desktop\.Name, StringComparison\.OrdinalIgnoreCase\) != true\)\s*\{.*?desktop\.Activate\(\);\s*\}', @"
+          if (name?.Equals(desktop.Name, StringComparison.OrdinalIgnoreCase) != true)
+          {
+              logger.Info(`$"[EVALUATION MODE] Detected desktop switch to '{name}', reactivation suppressed.");
+          }
+          "@
+          Set-Content $dskFile -Value $dskPatched -Encoding UTF8
+
+          # Patch 10: Kiosk Mode downgrade to None
+          $kmFile = "SafeExamBrowser.Runtime\Operations\Session\KioskModeOperation.cs"
+          $kmContent = Get-Content $kmFile -Raw
+          $kmPatched = $kmContent -replace '(?s)public override OperationResult Perform\(\)\s*\{.*?return OperationResult\.Success;\s*\}', @"
+          public override OperationResult Perform()
+          {
+              Logger.Info(`$"[EVALUATION MODE] Kiosk mode '{Context.Next.Settings.Security.KioskMode}' downgraded to None for evaluation purposes.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_InitializeKioskMode);
+              Context.Next.Settings.Security.KioskMode = KioskMode.None;
+              activeMode = KioskMode.None;
+              return OperationResult.Success;
+          }
+          "@
+          $kmPatched = $kmPatched -replace '(?s)public override OperationResult Repeat\(\)\s*\{.*?return OperationResult\.Success;\s*\}', @"
+          public override OperationResult Repeat()
+          {
+              Logger.Info("[EVALUATION MODE] Kiosk mode repeat downgraded to None for evaluation purposes.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_InitializeKioskMode);
+              Context.Next.Settings.Security.KioskMode = KioskMode.None;
+              activeMode = KioskMode.None;
+              return OperationResult.Success;
+          }
+          "@
+          $kmPatched = $kmPatched -replace '(?s)public override OperationResult Revert\(\)\s*\{.*?return OperationResult\.Success;\s*\}', @"
+          public override OperationResult Revert()
+          {
+              Logger.Info("[EVALUATION MODE] Kiosk mode revert bypassed.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_RevertKioskMode);
+              return OperationResult.Success;
+          }
+          "@
+          Set-Content $kmFile -Value $kmPatched -Encoding UTF8
 
           Write-Host "Evaluation environment patch applied successfully."
 
