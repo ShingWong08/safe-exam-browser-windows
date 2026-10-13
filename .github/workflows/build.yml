@@ -337,22 +337,49 @@ jobs:
       - name: Collect Artifacts
         shell: powershell
         run: |
+          New-Item -ItemType Directory -Path "artifacts\dll_x64" -Force
+          New-Item -ItemType Directory -Path "artifacts\dll_x86" -Force
           New-Item -ItemType Directory -Path "artifacts\installers" -Force
+
+          Copy-Item "SafeExamBrowser.Browser\bin\x64\Release\SafeExamBrowser.Browser.dll" "artifacts\dll_x64\" -ErrorAction SilentlyContinue
+          Copy-Item "SafeExamBrowser.Browser\bin\x86\Release\SafeExamBrowser.Browser.dll" "artifacts\dll_x86\" -ErrorAction SilentlyContinue
 
           Copy-Item "Setup\bin\x64\Release\Setup.msi" "artifacts\installers\SEB_x64_Setup.msi" -ErrorAction SilentlyContinue
           Copy-Item "Setup\bin\x86\Release\Setup.msi" "artifacts\installers\SEB_x86_Setup.msi" -ErrorAction SilentlyContinue
           Copy-Item "SetupBundle\bin\x86\Release\SetupBundle.exe" "artifacts\installers\SEB_SetupBundle.exe" -ErrorAction SilentlyContinue
 
-          Compress-Archive -Path "SafeExamBrowser.Runtime\bin\x64\Release\*" -DestinationPath "artifacts\SafeExamBrowser-Evaluation-Portable-x64.zip" -Force
+          Compress-Archive -Path "SafeExamBrowser.Runtime\bin\x64\Release\*" -DestinationPath "artifacts\SafeExamBrowser-Portable-x64.zip" -Force
 
-      - name: Upload Private Portable (Zip)
-        uses: actions/upload-artifact@v4
-        with:
-          name: SafeExamBrowser-Evaluation-Portable-x64
-          path: artifacts/SafeExamBrowser-Evaluation-Portable-x64.zip
+          Get-ChildItem -Path "artifacts" -Recurse | Select-Object FullName, Length
 
-      - name: Upload Private Installers (MSI & EXE)
+      - name: Upload Private Installers (Bundle & MSIs)
         uses: actions/upload-artifact@v4
         with:
           name: SafeExamBrowser-Evaluation-Installers
           path: artifacts/installers/
+
+      - name: Upload Private Portable Zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser-Evaluation-Portable-x64
+          path: artifacts/SafeExamBrowser-Portable-x64.zip
+
+      - name: Upload Private Replacement DLLs (x64 & x86)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser-Evaluation-Browser-DLL
+          path: |
+            artifacts/dll_x64/SafeExamBrowser.Browser.dll
+            artifacts/dll_x86/SafeExamBrowser.Browser.dll
+
+      - name: Upload All Evaluation Files (Complete Package)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser-Evaluation-All-Files
+          path: |
+            artifacts/installers/SEB_SetupBundle.exe
+            artifacts/installers/SEB_x64_Setup.msi
+            artifacts/installers/SEB_x86_Setup.msi
+            artifacts/SafeExamBrowser-Portable-x64.zip
+            artifacts/dll_x64/SafeExamBrowser.Browser.dll
+            artifacts/dll_x86/SafeExamBrowser.Browser.dll
