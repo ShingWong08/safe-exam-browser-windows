@@ -422,34 +422,34 @@ jobs:
 
           Get-ChildItem -Path "artifacts" -Recurse | Select-Object FullName, Length
 
-      - name: Upload Private Installers (Bundle & MSIs)
+      - name: Upload SEB SetupBundle.exe
         uses: actions/upload-artifact@v4
         with:
-          name: SafeExamBrowser-Evaluation-Installers
-          path: artifacts/installers/
+          name: SEB_SetupBundle.exe
+          path: artifacts/installers/SEB_SetupBundle.exe
 
-      - name: Upload Private Portable Zip
+      - name: Upload SEB x64 Setup.msi
         uses: actions/upload-artifact@v4
         with:
-          name: SafeExamBrowser-Evaluation-Portable-x64
+          name: SEB_x64_Setup.msi
+          path: artifacts/installers/SEB_x64_Setup.msi
+
+      - name: Upload SEB x86 Setup.msi
+        uses: actions/upload-artifact@v4
+        with:
+          name: SEB_x86_Setup.msi
+          path: artifacts/installers/SEB_x86_Setup.msi
+
+      - name: Upload SafeExamBrowser-Portable-x64.zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: SafeExamBrowser-Portable-x64.zip
           path: artifacts/SafeExamBrowser-Portable-x64.zip
 
-      - name: Upload Private Replacement DLLs (x64 & x86)
+      - name: Upload SafeExamBrowser.Browser.dll
         uses: actions/upload-artifact@v4
         with:
-          name: SafeExamBrowser-Evaluation-Browser-DLL
+          name: SafeExamBrowser.Browser.dll
           path: |
-            artifacts/dll_x64/SafeExamBrowser.Browser.dll
-            artifacts/dll_x86/SafeExamBrowser.Browser.dll
-
-      - name: Upload All Evaluation Files (Complete Package)
-        uses: actions/upload-artifact@v4
-        with:
-          name: SafeExamBrowser-Evaluation-All-Files
-          path: |
-            artifacts/installers/SEB_SetupBundle.exe
-            artifacts/installers/SEB_x64_Setup.msi
-            artifacts/installers/SEB_x86_Setup.msi
-            artifacts/SafeExamBrowser-Portable-x64.zip
             artifacts/dll_x64/SafeExamBrowser.Browser.dll
             artifacts/dll_x86/SafeExamBrowser.Browser.dll
