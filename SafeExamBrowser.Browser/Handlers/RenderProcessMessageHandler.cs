@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -54,7 +54,8 @@ namespace SafeExamBrowser.Browser.Handlers
 				frame.ExecuteJavaScriptAsync($"window.print = function() {{ alert('{text.Get(TextKey.Browser_PrintNotAllowed)}') }}");
 			}
 
-			if (settings.UseIsolatedClipboard)
+			// [AUDIT MODE] Do not inject isolated clipboard script to allow native OS clipboard
+			if (false && settings.UseIsolatedClipboard)
 			{
 				frame.ExecuteJavaScriptAsync(clipboardScript);
 

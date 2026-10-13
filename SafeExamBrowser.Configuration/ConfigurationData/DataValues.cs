@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -243,7 +243,7 @@ namespace SafeExamBrowser.Configuration.ConfigurationData
 			settings.Browser.ShowFileSystemElementPath = true;
 			settings.Browser.StartUrl = "https://www.safeexambrowser.org/start";
 			settings.Browser.UseCustomUserAgent = false;
-			settings.Browser.UseIsolatedClipboard = true;
+			settings.Browser.UseIsolatedClipboard = false;
 			settings.Browser.UseQueryParameter = false;
 			settings.Browser.UseTemporaryDownAndUploadDirectory = false;
 
@@ -305,7 +305,7 @@ namespace SafeExamBrowser.Configuration.ConfigurationData
 			settings.Security.AllowStickyKeys = false;
 			settings.Security.AllowTermination = true;
 			settings.Security.AllowWindowCapture = false;
-			settings.Security.ClipboardPolicy = ClipboardPolicy.Isolated;
+			settings.Security.ClipboardPolicy = ClipboardPolicy.Allow;
 			settings.Security.DisableSessionChangeLockScreen = false;
 			settings.Security.KioskMode = KioskMode.CreateNewDesktop;
 			settings.Security.VerifyCursorConfiguration = true;

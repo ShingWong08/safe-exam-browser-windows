@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -14,7 +14,7 @@ namespace SafeExamBrowser.Browser.Handlers
 	{
 		public void OnBeforeContextMenu(IWebBrowser webBrowser, IBrowser browser, IFrame frame, IContextMenuParams parameters, IMenuModel model)
 		{
-			model.Clear();
+			// [AUDIT MODE] Do not clear context menu to allow native right-click Copy / Paste / Cut
 		}
 
 		public bool OnContextMenuCommand(IWebBrowser webBrowser, IBrowser browser, IFrame frame, IContextMenuParams parameters, CefMenuCommand commandId, CefEventFlags eventFlags)

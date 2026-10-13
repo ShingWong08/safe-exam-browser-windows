@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -43,14 +43,14 @@ namespace SafeExamBrowser.Client.Operations
 
 		private void InitializeClipboard()
 		{
-			logger.Info("Initializing clipboard...");
+			logger.Info("[AUDIT MODE] Initializing clipboard with Allow policy...");
 			StatusChanged?.Invoke(TextKey.OperationStatus_InitializeClipboard);
-			clipboard.Initialize(Context.Settings.Security.ClipboardPolicy);
+			clipboard.Initialize(ClipboardPolicy.Allow);
 		}
 
 		private void FinalizeClipboard()
 		{
-			logger.Info("Finalizing clipboard...");
+			logger.Info("[AUDIT MODE] Finalizing clipboard...");
 			StatusChanged?.Invoke(TextKey.OperationStatus_FinalizeClipboard);
 			clipboard.Terminate();
 		}

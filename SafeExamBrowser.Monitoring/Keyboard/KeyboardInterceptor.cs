@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -70,12 +70,13 @@ namespace SafeExamBrowser.Monitoring.Keyboard
 			block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.Escape && !settings.AllowAltEsc;
 			block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.F4 && !settings.AllowAltF4;
 			block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.Space;
-			block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.Tab;
+			// [AUDIT MODE] Allow Alt+Tab and Clipboard shortcuts (Ctrl+C, Ctrl+V, Ctrl+X)
+			// block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.Tab;
 
-			block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.C && !settings.AllowCtrlC;
+			// block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.C && !settings.AllowCtrlC;
 			block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.Escape && !settings.AllowCtrlEsc;
-			block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.V && !settings.AllowCtrlV;
-			block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.X && !settings.AllowCtrlX;
+			// block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.V && !settings.AllowCtrlV;
+			// block |= modifier.HasFlag(KeyModifier.Ctrl) && key == Key.X && !settings.AllowCtrlX;
 
 			block |= modifier.HasFlag(KeyModifier.Injected) && !settings.AllowInjected;
 

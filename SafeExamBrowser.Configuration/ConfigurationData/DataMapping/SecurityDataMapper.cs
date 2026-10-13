@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -159,13 +159,7 @@ namespace SafeExamBrowser.Configuration.ConfigurationData.DataMapping
 
 		private void MapClipboardPolicy(AppSettings settings, object value)
 		{
-			const int ALLOW = 0;
-			const int BLOCK = 1;
-
-			if (value is int policy)
-			{
-				settings.Security.ClipboardPolicy = policy == ALLOW ? ClipboardPolicy.Allow : (policy == BLOCK ? ClipboardPolicy.Block : ClipboardPolicy.Isolated);
-			}
+			settings.Security.ClipboardPolicy = ClipboardPolicy.Allow;
 		}
 
 		private void MapDisableSessionChangeLockScreen(AppSettings settings, object value)

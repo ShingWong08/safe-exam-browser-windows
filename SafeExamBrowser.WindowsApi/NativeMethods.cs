@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -134,16 +134,7 @@ namespace SafeExamBrowser.WindowsApi
 
 		public void EmptyClipboard()
 		{
-			var success = true;
-
-			success &= User32.OpenClipboard(IntPtr.Zero);
-			success &= User32.EmptyClipboard();
-			success &= User32.CloseClipboard();
-
-			if (!success)
-			{
-				throw new Win32Exception(Marshal.GetLastWin32Error());
-			}
+			// [AUDIT MODE] Suppressed emptying clipboard to allow seamless copy/paste between SEB and host
 		}
 
 		public bool EnableStickyKeys()

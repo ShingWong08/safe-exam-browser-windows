@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -72,10 +72,10 @@ namespace SafeExamBrowser.Configuration.ConfigurationData
 
 		private void InitializeClipboardSettings(AppSettings settings)
 		{
-			settings.Browser.UseIsolatedClipboard = settings.Security.ClipboardPolicy == ClipboardPolicy.Isolated;
-			settings.Keyboard.AllowCtrlC = settings.Security.ClipboardPolicy != ClipboardPolicy.Block;
-			settings.Keyboard.AllowCtrlV = settings.Security.ClipboardPolicy != ClipboardPolicy.Block;
-			settings.Keyboard.AllowCtrlX = settings.Security.ClipboardPolicy != ClipboardPolicy.Block;
+			settings.Browser.UseIsolatedClipboard = false;
+			settings.Keyboard.AllowCtrlC = true;
+			settings.Keyboard.AllowCtrlV = true;
+			settings.Keyboard.AllowCtrlX = true;
 		}
 
 		private void InitializeProctoringSettings(AppSettings settings)

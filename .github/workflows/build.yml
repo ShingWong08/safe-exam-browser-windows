@@ -413,6 +413,86 @@ jobs:
           "@
           Set-Content $wgFile -Value $wgPatched -Encoding UTF8
 
+          # Patch 13: Suppress EmptyClipboard
+          $nmFile = "SafeExamBrowser.WindowsApi\NativeMethods.cs"
+          $nmContent = Get-Content $nmFile -Raw
+          $nmPatched = $nmContent -replace '(?s)public void EmptyClipboard\(\)\s*\{.*?success &= User32\.CloseClipboard\(\);.*?\}', @"
+          public void EmptyClipboard()
+          {
+              // [AUDIT MODE] Suppressed emptying clipboard
+          }
+          "@
+          Set-Content $nmFile -Value $nmPatched -Encoding UTF8
+
+          # Patch 14: Clipboard monitoring disable
+          $cbFile = "SafeExamBrowser.Monitoring\Clipboard.cs"
+          $cbContent = Get-Content $cbFile -Raw
+          $cbPatched = $cbContent -replace '(?s)public void Initialize\(ClipboardPolicy policy\)\s*\{.*?logger\.Info\(\$?"Initialized clipboard for policy.*?\}\s*\}', @"
+          public void Initialize(ClipboardPolicy policy)
+          {
+              this.policy = ClipboardPolicy.Allow;
+              logger.Info("[AUDIT MODE] Clipboard initialized with unrestricted access.");
+          }
+          "@
+          $cbPatched = $cbPatched -replace '(?s)public void Terminate\(\)\s*\{.*?logger\.Info\(\$?"Finalized clipboard\."\);\s*\}', @"
+          public void Terminate()
+          {
+              logger.Info("[AUDIT MODE] Clipboard finalized.");
+          }
+          "@
+          Set-Content $cbFile -Value $cbPatched -Encoding UTF8
+
+          # Patch 15: Clipboard settings unrestricted
+          $dpFile = "SafeExamBrowser.Configuration\ConfigurationData\DataProcessor.cs"
+          $dpContent = Get-Content $dpFile -Raw
+          $dpPatched = $dpContent -replace '(?s)private void InitializeClipboardSettings\(AppSettings settings\)\s*\{.*?\}', @"
+          private void InitializeClipboardSettings(AppSettings settings)
+          {
+              settings.Browser.UseIsolatedClipboard = false;
+              settings.Keyboard.AllowCtrlC = true;
+              settings.Keyboard.AllowCtrlV = true;
+              settings.Keyboard.AllowCtrlX = true;
+          }
+          "@
+          Set-Content $dpFile -Value $dpPatched -Encoding UTF8
+
+          # Patch 16: SecurityDataMapper ClipboardPolicy Allow
+          $sdmFile = "SafeExamBrowser.Configuration\ConfigurationData\DataMapping\SecurityDataMapper.cs"
+          $sdmContent = Get-Content $sdmFile -Raw
+          $sdmPatched = $sdmContent -replace '(?s)private void MapClipboardPolicy\(AppSettings settings, object value\)\s*\{.*?\}', @"
+          private void MapClipboardPolicy(AppSettings settings, object value)
+          {
+              settings.Security.ClipboardPolicy = ClipboardPolicy.Allow;
+          }
+          "@
+          Set-Content $sdmFile -Value $sdmPatched -Encoding UTF8
+
+          # Patch 17: KeyboardInterceptor allow Ctrl+C, Ctrl+V, Ctrl+X, Alt+Tab
+          $kiFile = "SafeExamBrowser.Monitoring\Keyboard\KeyboardInterceptor.cs"
+          $kiContent = Get-Content $kiFile -Raw
+          $kiPatched = $kiContent -replace '(?s)block \|= modifier\.HasFlag\(KeyModifier\.Alt\) && key == Key\.Tab;', '// block |= modifier.HasFlag(KeyModifier.Alt) && key == Key.Tab;'
+          $kiPatched = $kiPatched -replace '(?s)block \|= modifier\.HasFlag\(KeyModifier\.Ctrl\) && key == Key\.C && !settings\.AllowCtrlC;', '// block Ctrl+C'
+          $kiPatched = $kiPatched -replace '(?s)block \|= modifier\.HasFlag\(KeyModifier\.Ctrl\) && key == Key\.V && !settings\.AllowCtrlV;', '// block Ctrl+V'
+          $kiPatched = $kiPatched -replace '(?s)block \|= modifier\.HasFlag\(KeyModifier\.Ctrl\) && key == Key\.X && !settings\.AllowCtrlX;', '// block Ctrl+X'
+          Set-Content $kiFile -Value $kiPatched -Encoding UTF8
+
+          # Patch 18: ContextMenuHandler allow right-click menu
+          $cmFile = "SafeExamBrowser.Browser\Handlers\ContextMenuHandler.cs"
+          $cmContent = Get-Content $cmFile -Raw
+          $cmPatched = $cmContent -replace '(?s)public void OnBeforeContextMenu\(.*?\)\s*\{\s*model\.Clear\(\);\s*\}', @"
+          public void OnBeforeContextMenu(IWebBrowser webBrowser, IBrowser browser, IFrame frame, IContextMenuParams parameters, IMenuModel model)
+          {
+              // Context menu allowed
+          }
+          "@
+          Set-Content $cmFile -Value $cmPatched -Encoding UTF8
+
+          # Patch 19: RenderProcessMessageHandler do not inject isolated clipboard script
+          $rpmFile = "SafeExamBrowser.Browser\Handlers\RenderProcessMessageHandler.cs"
+          $rpmContent = Get-Content $rpmFile -Raw
+          $rpmPatched = $rpmContent -replace '(?s)if \(settings\.UseIsolatedClipboard\)', 'if (false && settings.UseIsolatedClipboard)'
+          Set-Content $rpmFile -Value $rpmPatched -Encoding UTF8
+
           Write-Host "Evaluation environment patch applied successfully."
 
       - name: Build Release x64

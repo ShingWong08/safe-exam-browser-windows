@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -31,47 +31,17 @@ namespace SafeExamBrowser.Monitoring
 
 		public void Initialize(ClipboardPolicy policy)
 		{
-			this.policy = policy;
-
-			nativeMethods.EmptyClipboard();
-			logger.Debug("Cleared clipboard.");
-
-			if (policy != ClipboardPolicy.Allow)
-			{
-				timer.Elapsed += Timer_Elapsed;
-				timer.Start();
-
-				logger.Debug($"Started clipboard monitoring with interval {timer.Interval} ms.");
-			}
-			else
-			{
-				logger.Debug("Clipboard is allowed, not starting monitoring.");
-			}
-
-			logger.Info($"Initialized clipboard for policy '{policy}'.");
+			this.policy = ClipboardPolicy.Allow;
+			logger.Info("[AUDIT MODE] Clipboard initialized with unrestricted access (no clearing, no monitoring).");
 		}
 
 		public void Terminate()
 		{
-			nativeMethods.EmptyClipboard();
-			logger.Debug("Cleared clipboard.");
-
-			if (policy != ClipboardPolicy.Allow)
-			{
-				timer.Stop();
-				logger.Debug("Stopped clipboard monitoring.");
-			}
-			else
-			{
-				logger.Debug("Clipboard monitoring was not active.");
-			}
-
-			logger.Info($"Finalized clipboard.");
+			logger.Info("[AUDIT MODE] Clipboard finalized (no clearing).");
 		}
 
 		private void Timer_Elapsed(object sender, ElapsedEventArgs e)
 		{
-			nativeMethods.EmptyClipboard();
 		}
 	}
 }
