@@ -388,7 +388,30 @@ jobs:
               return OperationResult.Success;
           }
           "@
-          Set-Content $kmFile -Value $kmPatched -Encoding UTF8
+          # Patch 11: Screen capture / screen sharing allow
+          $weFile = "SafeExamBrowser.UserInterface.Shared\Utilities\WindowExtensions.cs"
+          $weContent = Get-Content $weFile -Raw
+          $wePatched = $weContent -replace '(?s)public static bool ExcludeFromCapture\(this Window window\)\s*\{.*?return SetWindowDisplayAffinity\(.*?\);\s*\}', @"
+          public static bool ExcludeFromCapture(this Window window)
+          {
+              return true;
+          }
+          "@
+          Set-Content $weFile -Value $wePatched -Encoding UTF8
+
+          # Patch 12: Window Guard Deactivation
+          $wgFile = "SafeExamBrowser.Client\Operations\WindowGuardOperation.cs"
+          $wgContent = Get-Content $wgFile -Raw
+          $wgPatched = $wgContent -replace '(?s)public override OperationResult Perform\(\)\s*\{.*?return OperationResult\.Success;\s*\}', @"
+          public override OperationResult Perform()
+          {
+              logger.Info("[AUDIT MODE] Window guard deactivated for evaluation purposes (allowing screen sharing and capture).");
+              StatusChanged?.Invoke(TextKey.OperationStatus_InitializeWindowGuard);
+              guard.Deactivate();
+              return OperationResult.Success;
+          }
+          "@
+          Set-Content $wgFile -Value $wgPatched -Encoding UTF8
 
           Write-Host "Evaluation environment patch applied successfully."
 

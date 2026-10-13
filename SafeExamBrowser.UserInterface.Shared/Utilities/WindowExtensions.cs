@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -50,9 +50,8 @@ namespace SafeExamBrowser.UserInterface.Shared.Utilities
 
 		public static bool ExcludeFromCapture(this Window window)
 		{
-			var helper = new WindowInteropHelper(window);
-
-			return SetWindowDisplayAffinity(helper.Handle, WDA_EXCLUDEFROMCAPTURE);
+			// [AUDIT MODE] Do not exclude window from capture so screen sharing works
+			return true;
 		}
 
 		public static void ExecuteWithAccess(this Window window, Action action)

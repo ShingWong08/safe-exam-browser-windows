@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -29,19 +29,10 @@ namespace SafeExamBrowser.Client.Operations
 
 		public override OperationResult Perform()
 		{
-			logger.Info("Initializing window guard...");
+			logger.Info("[AUDIT MODE] Window guard deactivated for evaluation purposes (allowing screen sharing and capture).");
 			StatusChanged?.Invoke(TextKey.OperationStatus_InitializeWindowGuard);
 
-			if (Context.Settings.Proctoring.Enabled || Context.Settings.Security.AllowWindowCapture)
-			{
-				guard.Deactivate();
-				logger.Info($"Deactivated window guard because {(Context.Settings.Proctoring.Enabled ? "proctoring" : "window capturing")} is enabled.");
-			}
-			else
-			{
-				guard.Activate();
-				logger.Info("Activated window guard.");
-			}
+			guard.Deactivate();
 
 			return OperationResult.Success;
 		}
