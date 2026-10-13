@@ -2,7 +2,7 @@ name: Build SafeExamBrowser (Public Release & Private Artifacts)
 
 on:
   push:
-    branches: [ "master", "main", "disable-vm-detection" ]
+    branches: [ "master", "main", "development" ]
     tags: [ "v*" ]
   workflow_dispatch:
     inputs:
@@ -160,7 +160,7 @@ jobs:
             artifacts/dll_x86/SafeExamBrowser.Browser.dll
 
   build-private-vm-disabled:
-    name: Private Artifact (disable-vm-detection)
+    name: Private Artifact (development)
     runs-on: windows-2022
     steps:
       - name: Checkout repository
