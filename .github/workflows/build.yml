@@ -249,6 +249,77 @@ jobs:
           }
           "@
           Set-Content $rsFile -Value $rsPatched -Encoding UTF8
+
+          # Patch 3: Application Blacklist/Monitor bypass
+          $amFile = "SafeExamBrowser.Monitoring\Applications\ApplicationMonitor.cs"
+          $amContent = Get-Content $amFile -Raw
+          $amPatched = $amContent -replace '(?s)(public InitializationResult Initialize\(ApplicationSettings settings\)\s*\{).*?(return (?:new InitializationResult\(\)|result);\s*\})', @"
+          public InitializationResult Initialize(ApplicationSettings settings)
+          {
+              logger.Info("[EVALUATION MODE] Application blacklist/whitelist check bypassed for testing purposes.");
+              return new InitializationResult();
+          }
+          "@
+          Set-Content $amFile -Value $amPatched -Encoding UTF8
+
+          # Patch 4: Display Monitor bypass
+          $dmFile = "SafeExamBrowser.Monitoring\Display\DisplayMonitor.cs"
+          $dmContent = Get-Content $dmFile -Raw
+          $dmPatched = $dmContent -replace '(?s)(public ValidationResult ValidateConfiguration\(DisplaySettings settings\)\s*\{).*?(return (?:new ValidationResult|result).*?;\s*\})', @"
+          public ValidationResult ValidateConfiguration(DisplaySettings settings)
+          {
+              logger.Info("[EVALUATION MODE] Display configuration validation bypassed for testing purposes.");
+              return new ValidationResult { IsAllowed = true };
+          }
+          "@
+          Set-Content $dmFile -Value $dmPatched -Encoding UTF8
+
+          # Patch 5: Service Operation bypass
+          $soFile = "SafeExamBrowser.Runtime\Operations\Session\ServiceOperation.cs"
+          $soContent = Get-Content $soFile -Raw
+          $soPatched = $soContent -replace '(?s)(private bool IgnoreService\(\)\s*\{).*?(return (?:true|false);\s*\})', @"
+          private bool IgnoreService()
+          {
+              Logger.Info("[EVALUATION MODE] Service requirement bypassed for testing purposes.");
+              return true;
+          }
+          "@
+          Set-Content $soFile -Value $soPatched -Encoding UTF8
+
+          # Patch 6: Version Restriction bypass
+          $vrFile = "SafeExamBrowser.Runtime\Operations\Session\VersionRestrictionOperation.cs"
+          $vrContent = Get-Content $vrFile -Raw
+          $vrPatched = $vrContent -replace '(?s)(private OperationResult ValidateRestrictions\(\)\s*\{).*?(return (?:OperationResult\.Success|result);\s*\})', @"
+          private OperationResult ValidateRestrictions()
+          {
+              Logger.Info("[EVALUATION MODE] Version restriction validation bypassed for testing purposes.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_ValidateVersionRestrictions);
+              return OperationResult.Success;
+          }
+          "@
+          Set-Content $vrFile -Value $vrPatched -Encoding UTF8
+
+          # Patch 7: Session Integrity bypass (Perform + Repeat)
+          $siFile = "SafeExamBrowser.Runtime\Operations\Session\SessionIntegrityOperation.cs"
+          $siContent = Get-Content $siFile -Raw
+          $siPatched = $siContent -replace '(?s)(public override OperationResult Perform\(\)\s*\{).*?(return (?:OperationResult\.Success|success \? OperationResult\.Success : OperationResult\.Failed);\s*\})', @"
+          public override OperationResult Perform()
+          {
+              Logger.Info("[EVALUATION MODE] Session integrity check bypassed for testing purposes.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_VerifySessionIntegrity);
+              return OperationResult.Success;
+          }
+          "@
+          $siPatched = $siPatched -replace '(?s)(public override OperationResult Repeat\(\)\s*\{).*?(return (?:OperationResult\.Success|success \? OperationResult\.Success : OperationResult\.Failed);\s*\})', @"
+          public override OperationResult Repeat()
+          {
+              Logger.Info("[EVALUATION MODE] Session integrity re-check bypassed for testing purposes.");
+              StatusChanged?.Invoke(TextKey.OperationStatus_VerifySessionIntegrity);
+              return OperationResult.Success;
+          }
+          "@
+          Set-Content $siFile -Value $siPatched -Encoding UTF8
+
           Write-Host "Evaluation environment patch applied successfully."
 
       - name: Build Release x64

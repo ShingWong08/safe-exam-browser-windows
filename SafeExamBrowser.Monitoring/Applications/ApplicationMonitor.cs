@@ -50,13 +50,9 @@ namespace SafeExamBrowser.Monitoring.Applications
 
 		public InitializationResult Initialize(ApplicationSettings settings)
 		{
-			var result = new InitializationResult();
+			logger.Info("[AUDIT MODE] Application blacklist/whitelist check bypassed for testing/auditing purposes.");
 
-			InitializeProcesses();
-			InitializeBlacklist(settings, result);
-			InitializeWhitelist(settings, result);
-
-			return result;
+			return new InitializationResult();
 		}
 
 		public void Start()

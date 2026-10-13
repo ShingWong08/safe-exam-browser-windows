@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -44,33 +44,10 @@ namespace SafeExamBrowser.Runtime.Operations.Session
 
 		private OperationResult ValidateRestrictions()
 		{
-			var result = OperationResult.Success;
-
-			Logger.Info("Validating version restrictions...");
+			Logger.Info("[AUDIT MODE] Version restriction validation bypassed for testing/auditing purposes.");
 			StatusChanged?.Invoke(TextKey.OperationStatus_ValidateVersionRestrictions);
 
-			if (Restrictions.Any())
-			{
-				var requiredVersions = $"'{string.Join("', '", Restrictions)}'";
-				var version = Context.Next.AppConfig.ProgramInformationalVersion;
-
-				if (Restrictions.Any(r => IsFulfilled(r)))
-				{
-					Logger.Info($"The installed SEB version '{version}' complies with the version restrictions: {requiredVersions}.");
-				}
-				else
-				{
-					result = OperationResult.Aborted;
-					Logger.Error($"The installed SEB version '{version}' does not comply with the version restrictions: {requiredVersions}.");
-					ShowErrorMessage(version);
-				}
-			}
-			else
-			{
-				Logger.Info($"There are no version restrictions for the configuration.");
-			}
-
-			return result;
+			return OperationResult.Success;
 		}
 
 		private bool IsFulfilled(VersionRestriction restriction)

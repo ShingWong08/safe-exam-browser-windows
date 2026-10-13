@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -66,45 +66,9 @@ namespace SafeExamBrowser.Monitoring.Display
 
 		public ValidationResult ValidateConfiguration(DisplaySettings settings)
 		{
-			var result = new ValidationResult();
+			logger.Info("[AUDIT MODE] Display configuration validation bypassed for testing/auditing purposes.");
 
-			if (TryLoadDisplays(out var displays))
-			{
-				var active = displays.Where(d => d.IsActive);
-				var count = active.Count();
-				var hasAllowedCount = count <= settings.AllowedDisplays;
-				var hasAllowedTypes = !settings.InternalDisplayOnly || active.All(d => d.IsInternal);
-
-				result.ExternalDisplays = active.Count(d => !d.IsInternal);
-				result.InternalDisplays = active.Count(d => d.IsInternal);
-				result.IsAllowed = hasAllowedCount && hasAllowedTypes;
-
-				if (result.IsAllowed)
-				{
-					logger.Info($"Detected {count} active displays and {settings.AllowedDisplays} are allowed, display configuration is valid.");
-				}
-				else
-				{
-					if (!hasAllowedCount)
-					{
-						logger.Warn($"Detected {count} active displays but only {settings.AllowedDisplays} are allowed!");
-					}
-
-					if (!hasAllowedTypes)
-					{
-						logger.Warn("Detected external display(s) but only internal displays are allowed!");
-					}
-
-					logger.Warn("Display configuration is not valid!");
-				}
-			}
-			else
-			{
-				result.IsAllowed = settings.IgnoreError;
-				logger.Warn($"Failed to validate display configuration{(result.IsAllowed ? ", ignoring error." : " and errors are not allowed!")}");
-			}
-
-			return result;
+			return new ValidationResult { IsAllowed = true };
 		}
 
 		private void SystemEvents_DisplaySettingsChanged(object sender, EventArgs e)

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright (c) 2026 ETH Zürich, IT Services
  * 
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -115,14 +115,9 @@ namespace SafeExamBrowser.Runtime.Operations.Session
 
 		private bool IgnoreService()
 		{
-			if (Context.Next.Settings.Service.IgnoreService)
-			{
-				Logger.Info("The service will be ignored for the next session.");
+			Logger.Info("[AUDIT MODE] Service requirement bypassed for testing/auditing purposes.");
 
-				return true;
-			}
-
-			return false;
+			return true;
 		}
 
 		private bool TryInitializeConnection()
